@@ -29,7 +29,7 @@ geo.add_boundary(
     criteria=lambda x, y: (y == 1.0) | (y == 0.0) | (x == 0.0) | (x == 1.0))
 
 # discretize geometry
-npoints = 10201
+npoints = 16
 geo_disc = geo.discretize(npoints=npoints, method="uniform")
 
 # Laplace
@@ -44,16 +44,17 @@ pde.add_bc("around", bc_around)
 # discretization pde
 pde_disc = pde.discretize(geo_disc=geo_disc)
 
-# Network
-# TODO: remove num_ins and num_outs
+# network
 net = psci.network.FCNet(
     num_ins=2, num_outs=1, num_layers=5, hidden_size=20, activation='tanh')
+
+exit()
 
 # Loss
 loss = psci.loss.L2()
 
 # Algorithm
-algo = psci.algorithm.PINNs(net=net, loss=loss)
+algo = psci.algorithm.PINNs(net=net, loss=loss, input_order="time-space")
 
 # Optimizer
 # opt = psci.optimizer.Adam(learning_rate=0.001, parameters=net.parameters())

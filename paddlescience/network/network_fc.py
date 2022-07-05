@@ -48,6 +48,7 @@ class FCNet(NetworkBase):
 
         self.weights = []
         self.biases = []
+
         if activation == 'sigmoid':
             self.activation = F.sigmoid
         elif activation == 'tanh':
@@ -58,7 +59,7 @@ class FCNet(NetworkBase):
         # dynamic mode: make network here
         # static  mode: make network in solver
         if paddle.in_dynamic_mode():
-            self.make_network_dynamic()
+            self.make_network()
 
         # self.make_network_static()
 
@@ -70,7 +71,8 @@ class FCNet(NetworkBase):
         else:
             return None
 
-    def make_network_dynamic(self):
+    # create network
+    def make_network(self):
         for i in range(self.num_layers):
             if i == 0:
                 lsize = self.num_ins
@@ -82,37 +84,46 @@ class FCNet(NetworkBase):
                 lsize = self.hidden_size
                 rsize = self.hidden_size
 
-            w = self.create_parameter(
-                shape=[lsize, rsize], dtype=self._dtype, is_bias=False)
-            b = self.create_parameter(
-                shape=[rsize], dtype=self._dtype, is_bias=True)
-            self.weights.append(w)
-            self.biases.append(b)
-            self.add_parameter("w_" + str(i), w)
-            self.add_parameter("b_" + str(i), b)
+            attr_w = paddle.ParamAttr(
+                name="attr_w_" + str(i),
+                learning_rate=0.5,
+                initializer=paddle.nn.initializer.Assign(array_w[i]))
 
-    def make_network_static(self):
-        for i in range(self.num_layers):
-            if i == 0:
-                lsize = self.num_ins
-                rsize = self.hidden_size
-            elif i == (self.num_layers - 1):
-                lsize = self.hidden_size
-                rsize = self.num_outs
+            attr_b = paddle.ParamAttr(
+                name="attr_b_" + str(i),
+                learning_rate=0.5,
+                initializer=paddle.nn.initializer.Assign(array_b[i]))
+
+            # create parameters
+            if paddle.in_dynamic_mode():
+                w = self.create_parameter(
+                    shape=[lsize, rsize],
+                    dtype=self._dtype,
+                    is_bias=False,
+                    attr=attr_w)
+                b = self.create_parameter(
+                    shape=[rsize],
+                    dtype=self._dtype,
+                    is_bias=True,
+                    attr=attr_b)
             else:
-                lsize = self.hidden_size
-                rsize = self.hidden_size
-
-            w = paddle.static.create_parameter(
-                shape=[lsize, rsize], dtype=self._dtype, is_bias=False)
-            b = paddle.static.create_parameter(
-                shape=[rsize], dtype=self._dtype, is_bias=True)
+                w = paddle.static.create_parameter(
+                    shape=[lsize, rsize],
+                    dtype=self._dtype,
+                    is_bias=False,
+                    attr=attr_w)
+                b = paddle.static.create_parameter(
+                    shape=[rsize],
+                    dtype=self._dtype,
+                    is_bias=True,
+                    attr=attr_b)
 
             self.weights.append(w)
             self.biases.append(b)
             self.add_parameter("w_" + str(i), w)
             self.add_parameter("b_" + str(i), b)
 
+    # forward computation
     def nn_func(self, ins):
         u = ins
         for i in range(self.num_layers - 1):
@@ -140,15 +151,6 @@ class FCNet(NetworkBase):
                                                   is_biases):
             shape = old_param.shape
             value = paddle.reshape(flat_param, shape)
-            # new_param = self.create_parameter(shape,
-            #                                   dtype=self.dtype,
-            #                                   is_bias=is_bias,
-            #                                   default_initializer=Assign(value))
-            # if is_bias:
-            #     self.biases.append(new_param)
-            # else:
-            #     self.weights.append(new_param)
-            # self.add_parameter(old_param.name.split('.')[-1], new_param)
             new_param = value
             if is_bias:
                 self.biases.append(new_param)
