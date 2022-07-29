@@ -65,7 +65,7 @@ class L2:
         cmploss = CompFormula(pde, net)
 
         # compute outs, jacobian, hessian
-        cmploss.compute_outs_der(input, bs, param)
+        cmploss.compute_outs_der(input, bs, params)
 
         # print(input)
         # print(cmploss.outs[0:4,:])
@@ -126,7 +126,7 @@ class L2:
 
         # compute outs, jacobian, hessian
         cmploss.compute_outs_der(input, bs,
-                                 param)  # TODO: dirichlet not need der
+                                 params)  # TODO: dirichlet not need der
 
         loss = 0.0
         for i in range(len(pde.bc[name_b])):
@@ -176,7 +176,7 @@ class L2:
 
         # compute outs
         cmploss = CompFormula(pde, net)
-        cmploss.compute_outs(input, bs, param)
+        cmploss.compute_outs(input, bs, params)
 
         loss = 0.0
         for i in range(len(pde.ic)):
@@ -212,7 +212,7 @@ class L2:
         cmploss = CompFormula(pde, net)
 
         # compute outs
-        cmploss.compute_outs(input, bs, param)
+        cmploss.compute_outs(input, bs, params)
 
         loss = 0.0
         for i in range(len(pde.dvar)):

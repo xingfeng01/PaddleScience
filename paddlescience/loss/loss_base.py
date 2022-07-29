@@ -44,7 +44,7 @@ class CompFormula:
     def compute_outs_der(self, input, bs, params=None):
 
         # outs
-        self.compute_outs(input, bs, param)
+        self.compute_outs(input, bs, params)
 
         # jacobian
         jacobian = Jacobian(self.net.nn_func, input, is_batched=True)
