@@ -514,18 +514,24 @@ class PINNs(AlgorithmBase):
             # print("idx user next: ", idx)
         return labels
 
-    def compute_forward(self, param, *inputs):
+    def compute_forward(self, *inputs, params=None):
 
         outs = list()
 
         for i in inputs:
-            out = self.net.nn_func(i, param)
+            out = self.net.nn_func(i, params)
             outs.append(out)
 
         return outs
 
-    def compute(self, param, *inputs_labels, ninputs, inputs_attr, nlabels,
-                labels_attr, pde):
+    def compute(self,
+                *inputs_labels,
+                ninputs,
+                inputs_attr,
+                nlabels,
+                labels_attr,
+                pde,
+                params=None):
 
         outs = list()
 
@@ -551,8 +557,14 @@ class PINNs(AlgorithmBase):
             # print(input[0:5, :])
 
             loss_i, out_i = self.loss.eq_loss(
-                param, pde, self.net, input, input_attr, labels,
-                labels_attr["interior"], -1)  # TODO: bs is not used
+                pde,
+                self.net,
+                input,
+                input_attr,
+                labels,
+                labels_attr["interior"],
+                bs=-1,
+                params=None)  # TODO: bs is not used
             loss_eq += loss_i
             outs.append(out_i)
             n += 1
@@ -564,8 +576,15 @@ class PINNs(AlgorithmBase):
             # print("bc: ", len(input))
 
             loss_b, out_b = self.loss.bc_loss(
-                param, pde, self.net, name_b, input, input_attr, labels,
-                labels_attr, -1)  # TODO: bs is not used
+                pde,
+                self.net,
+                name_b,
+                input,
+                input_attr,
+                labels,
+                labels_attr,
+                bs=-1,
+                params=None)  # TODO: bs is not used
             loss_bc += loss_b
             outs.append(out_b)
             n += 1
@@ -573,29 +592,46 @@ class PINNs(AlgorithmBase):
         # initial points: compute ic_loss
         for name_ic, input_attr in inputs_attr["ic"].items():
             input = inputs[n]
-            loss_it, out_it = self.loss.ic_loss(param, pde, self.net, input,
-                                                input_attr, labels,
-                                                labels_attr, -1)
+            loss_it, out_it = self.loss.ic_loss(
+                pde,
+                self.net,
+                input,
+                input_attr,
+                labels,
+                labels_attr,
+                bs=-1,
+                params=None)
             loss_ic += loss_it
             outs.append(out_it)
             n += 1
 
-        # data points: compute data_loss and eq_loss
         for name_d, input_attr in inputs_attr["user"].items():
             input = inputs[n]
 
             # print("user: ", len(input))
 
             # eq loss
-            loss_id, out_id = self.loss.eq_loss(param, pde, self.net, input,
-                                                input_attr, labels,
-                                                labels_attr["user"], -1)
+            loss_id, out_id = self.loss.eq_loss(
+                pde,
+                self.net,
+                input,
+                input_attr,
+                labels,
+                labels_attr["user"],
+                bs=-1,
+                params=None)
             loss_eq += loss_id
 
             # data loss
             loss_d, out_d = self.loss.data_loss(
-                param, pde, self.net, input, input_attr, labels,
-                labels_attr["user"], -1)  # TODO: bs is not used
+                pde,
+                self.net,
+                input,
+                input_attr,
+                labels,
+                labels_attr["user"],
+                bs=-1,
+                params=None)  # TODO: bs is not used
             loss_data += loss_d
             outs.append(out_id)
 

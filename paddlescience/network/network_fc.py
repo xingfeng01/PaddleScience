@@ -149,7 +149,6 @@ class FCNet(NetworkBase):
             self.add_parameter("w_" + str(i), w)
             self.add_parameter("b_" + str(i), b)
 
-    # @partial(jit, static_argnums=(0,))
     def __nn_func_paddle(self, ins):
         u = ins
         for i in range(self.num_layers - 1):
