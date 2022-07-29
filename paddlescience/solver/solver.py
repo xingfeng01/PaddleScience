@@ -24,11 +24,13 @@ import time
 from . import utils
 from .. import config
 
-if config._compute_backend == "jax":
+try:
     import jax
     import jax.numpy as jnp
     from jax import jit
     from functools import partial
+except:
+    pass
 
 __all__ = ["Solver"]
 

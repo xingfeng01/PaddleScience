@@ -18,11 +18,13 @@ from .network_base import NetworkBase
 
 from .. import config
 
-if config._compute_backend == "jax":
+try:
     import jax, jax.random
     import jax.example_libraries, jax.example_libraries.stax
     from jax import jit
     from functools import partial
+except:
+    pass
 
 
 class NetOut:

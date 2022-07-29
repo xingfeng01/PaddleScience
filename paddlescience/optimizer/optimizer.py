@@ -17,8 +17,10 @@ from paddle.incubate.optimizer.functional.lbfgs import minimize_lbfgs
 from paddle.incubate.optimizer.functional.bfgs import minimize_bfgs
 
 from .. import config
-if config._compute_backend == "jax":
+try:
     import jax.example_libraries.optimizers
+except:
+    pass
 
 
 def Adam(**kargs):
