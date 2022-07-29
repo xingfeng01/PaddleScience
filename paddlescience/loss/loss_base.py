@@ -58,6 +58,12 @@ class CompFormula:
 
             hessian.append(Hessian(func, input, is_batched=True))
 
+        # print("*** Jacobian *** ")
+        # print(jacobian[:])
+
+        # print("*** Hessian *** ")
+        # print(hessian[2][:])
+
         # self.outs = outs
         self.jacobian = jacobian
         self.hessian = hessian
