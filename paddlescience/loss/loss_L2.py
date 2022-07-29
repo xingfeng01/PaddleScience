@@ -18,10 +18,6 @@ from .loss_base import CompFormula, l2_norm_square
 from ..labels import LabelInt
 from .. import config
 
-from .. import config
-
-from jax import numpy as jnp
-
 
 class L2:
     """

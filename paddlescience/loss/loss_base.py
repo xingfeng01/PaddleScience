@@ -21,9 +21,10 @@ from paddle.incubate.autograd import Jacobian, Hessian
 
 import time
 
-import jax
-from jax import jit
-from functools import partial
+if config._compute_backend == "jax":
+    import jax
+    from jax import jit
+    from functools import partial
 
 
 class CompFormula:

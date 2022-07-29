@@ -28,12 +28,12 @@ ref_sol = lambda x, y: np.cos(x) * np.cosh(y)
 
 # set geometry and boundary
 geo = psci.geometry.Rectangular(origin=(0.0, 0.0), extent=(1.0, 1.0))
-# geo.add_boundary(
-#     name="around",
-#     criteria=lambda x, y: (y == 1.0) | (y == 0.0) | (x == 0.0) | (x == 1.0))
+geo.add_boundary(
+    name="around",
+    criteria=lambda x, y: (y == 1.0) | (y == 0.0) | (x == 0.0) | (x == 1.0))
 
 # discretize geometry
-npoints = 101 * 101
+npoints = 10201
 geo_disc = geo.discretize(npoints=npoints, method="uniform")
 
 # Laplace
@@ -43,7 +43,7 @@ pde = psci.pde.Laplace(dim=2)
 bc_around = psci.bc.Dirichlet('u', rhs=ref_sol)
 
 # add bounday and boundary condition
-# pde.add_bc("around", bc_around)
+pde.add_bc("around", bc_around)
 
 # discretization pde
 pde_disc = pde.discretize(geo_disc=geo_disc)

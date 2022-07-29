@@ -13,11 +13,12 @@
 # limitations under the License.
 
 import paddle
-import jax.example_libraries.optimizers
-
-from .. import config
 from paddle.incubate.optimizer.functional.lbfgs import minimize_lbfgs
 from paddle.incubate.optimizer.functional.bfgs import minimize_bfgs
+
+from .. import config
+if config._compute_backend == "jax":
+    import jax.example_libraries.optimizers
 
 
 def Adam(**kargs):

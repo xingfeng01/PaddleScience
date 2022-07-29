@@ -11,25 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import numpy as np
 import paddle
 from paddle.static import InputSpec
 from paddle.distributed import fleet
 from paddle.distributed.auto_parallel.engine import Engine
-
-import jax
-import jax.numpy as jnp
-from jax import jit
-from functools import partial
-import time
-
 from paddle.incubate.optimizer.functional.lbfgs import minimize_lbfgs
 from paddle.incubate.optimizer.functional.bfgs import minimize_bfgs
 
-from . import utils
-from .. import config
+import numpy as np
 from visualdl import LogWriter
 import time
+from . import utils
+from .. import config
+
+if config._compute_backend == "jax":
+    import jax
+    import jax.numpy as jnp
+    from jax import jit
+    from functools import partial
 
 __all__ = ["Solver"]
 

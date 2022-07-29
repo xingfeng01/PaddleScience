@@ -16,13 +16,13 @@ import paddle
 import paddle.nn.functional as F
 from .network_base import NetworkBase
 
-import jax, jax.random
-import jax.example_libraries, jax.example_libraries.stax
-from jax import jit
-
 from .. import config
 
-from functools import partial
+if config._compute_backend == "jax":
+    import jax, jax.random
+    import jax.example_libraries, jax.example_libraries.stax
+    from jax import jit
+    from functools import partial
 
 
 class NetOut:

@@ -22,7 +22,8 @@ from collections import OrderedDict
 import numpy as np
 
 from .. import config
-import jax
+if config._compute_backend == "jax":
+    import jax
 
 
 class PINNs(AlgorithmBase):
