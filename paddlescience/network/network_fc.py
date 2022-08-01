@@ -282,6 +282,9 @@ class FCNet(NetworkBase):
                        bias_init=None,
                        learaning_rate=1.0):
 
+        if isinstance(n, int):
+            n = list(n)
+
         Dense = jax.example_libraries.stax.Dense
 
         netlist = list()
