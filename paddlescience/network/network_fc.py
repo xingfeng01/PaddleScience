@@ -67,7 +67,13 @@ class FCNet(NetworkBase):
         self._weights_attr = [None for i in range(num_layers)]
         self._bias_attr = [None for i in range(num_layers)]
 
-        act_str = {'sigmoid': F.sigmoid, 'tanh': paddle.tanh}
+        if config._compute_backend == "jax":
+            Tanh = jax.example_libraries.stax.Tanh
+            Sigmoid = jax.example_libraries.stax.Sigmoid
+            act_str = {'sigmoid': Sigmoid, 'tanh': Tanh}
+        else:
+            act_str = {'sigmoid': F.sigmoid, 'tanh': paddle.tanh}
+
         if isinstance(activation, str) and (activation in act_str):
             self.activation = act_str.get(activation)
         elif callable(activation):
@@ -99,12 +105,11 @@ class FCNet(NetworkBase):
     def make_network_jax(self):
 
         Dense = jax.example_libraries.stax.Dense
-        Tanh = jax.example_libraries.stax.Tanh
 
         netlist = list()
         for i in range(self.num_layers - 1):
             netlist.append(Dense(self.hidden_size))
-            netlist.append(Tanh)  # TODO: optimizer sigmoid
+            netlist.append(self.activation)
         netlist.append(Dense(self.num_outs))
 
         # i = self.num_layers - 1
@@ -121,8 +126,6 @@ class FCNet(NetworkBase):
         rng_key = jax.random.PRNGKey(1)
         input_shape = (None, self.num_ins)
         _, self.weights = init_func(rng_key, input_shape)
-        # print("len: ", len(self.weights))
-        # print(self.weights[0][1])
 
     def make_network(self):
         for i in range(self.num_layers):
@@ -210,6 +213,11 @@ class FCNet(NetworkBase):
             >>> net.initialize(n=[1,2], weight_init=wcst, bias_init=bcst) 
         """
 
+        if config._compute_backend == "jax":
+            self.initialize_jax(path, n, weight_init, bias_init,
+                                learaning_rate)
+            return
+
         if type(path) is str:
             self.params_path = path
             # In dynamic graph mode, load the params.
@@ -266,6 +274,43 @@ class FCNet(NetworkBase):
                             dtype=self._dtype,
                             is_bias=True,
                             attr=b_attr)
+
+    def initialize_jax(self,
+                       path=None,
+                       n=None,
+                       weight_init=None,
+                       bias_init=None,
+                       learaning_rate=1.0):
+
+        Dense = jax.example_libraries.stax.Dense
+
+        netlist = list()
+        for i in range(self.num_layers):
+            if i in n:
+                if (weight_init is not None) and (bias_init is not None):
+                    netlist.append(
+                        Dense(
+                            self.hidden_size,
+                            W_init=weight_init,
+                            b_init=bias_init))
+                elif weight_init is not None:
+                    netlist.append(Dense(self.hidden_size, W_init=weight_init))
+                elif bias_init is not None:
+                    netlist.append(Dense(self.hidden_size, b_init=bias_init))
+                else:
+                    netlist.append(Dense(self.hidden_size))
+            else:
+                netlist.append(Dense(self.hidden_size))
+
+            if i < (self.num_layers - 1):
+                netlist.append(self.activation)
+
+        init_func, self.predict_func = jax.example_libraries.stax.serial(
+            *netlist)
+
+        rng_key = jax.random.PRNGKey(1)
+        input_shape = (None, self.num_ins)
+        _, self.weights = init_func(rng_key, input_shape)
 
     def flatten_params(self):
         flat_vars = list(map(paddle.flatten, self._weights + self._biases))
