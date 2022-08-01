@@ -21,10 +21,12 @@ from paddle.incubate.autograd import Jacobian, Hessian
 
 import time
 
-if config._compute_backend == "jax":
+try:
     import jax
     from jax import jit
     from functools import partial
+except:
+    pass
 
 
 class CompFormula:
@@ -47,22 +49,30 @@ class CompFormula:
         self.compute_outs(input, bs, params)
 
         # jacobian
-        jacobian = Jacobian(self.net.nn_func, input, is_batched=True)
+        if config._compute_backend == "jax":
+
+            def func(params, x):
+                return jax.jacrev(self.net.nn_func, argnums=0)(x, params)
+
+            jacobian = jax.vmap(func, [None, 0], -1)(params, input)
+        else:
+            jacobian = Jacobian(self.net.nn_func, input, is_batched=True)
 
         # hessian
-        hessian = list()
-        for i in range(self.net.num_outs):
+        if config._compute_backend == "jax":
 
-            def func(input):
-                return self.net.nn_func(input)[:, i:i + 1]
+            def func(params, x):
+                return jax.hessian(self.net.nn_func, argnums=0)(x, params)
 
-            hessian.append(Hessian(func, input, is_batched=True))
+            hessian = jax.vmap(func, [None, 0], -1)(params, input)
+        else:
+            hessian = list()
+            for i in range(self.net.num_outs):
 
-        # print("*** Jacobian *** ")
-        # print(jacobian[:])
+                def func(input):
+                    return self.net.nn_func(input)[:, i:i + 1]
 
-        # print("*** Hessian *** ")
-        # print(hessian[2][:])
+                hessian.append(Hessian(func, input, is_batched=True))
 
         # self.outs = outs
         self.jacobian = jacobian

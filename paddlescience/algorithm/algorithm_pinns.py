@@ -22,8 +22,11 @@ from collections import OrderedDict
 import numpy as np
 
 from .. import config
-if config._compute_backend == "jax":
+
+try:
     import jax
+except:
+    pass
 
 
 class PINNs(AlgorithmBase):
@@ -525,14 +528,8 @@ class PINNs(AlgorithmBase):
 
         return outs
 
-    def compute(self,
-                *inputs_labels,
-                ninputs,
-                inputs_attr,
-                nlabels,
-                labels_attr,
-                pde,
-                params=None):
+    def compute(self, params, *inputs_labels, ninputs, inputs_attr, nlabels,
+                labels_attr, pde):
 
         outs = list()
 
@@ -565,7 +562,7 @@ class PINNs(AlgorithmBase):
                 labels,
                 labels_attr["interior"],
                 bs=-1,
-                params=None)  # TODO: bs is not used
+                params=params)  # TODO: bs is not used
             loss_eq += loss_i
             outs.append(out_i)
             n += 1
@@ -585,7 +582,7 @@ class PINNs(AlgorithmBase):
                 labels,
                 labels_attr,
                 bs=-1,
-                params=None)  # TODO: bs is not used
+                params=params)  # TODO: bs is not used
             loss_bc += loss_b
             outs.append(out_b)
             n += 1
@@ -601,7 +598,7 @@ class PINNs(AlgorithmBase):
                 labels,
                 labels_attr,
                 bs=-1,
-                params=None)
+                params=params)
             loss_ic += loss_it
             outs.append(out_it)
             n += 1
@@ -620,7 +617,7 @@ class PINNs(AlgorithmBase):
                 labels,
                 labels_attr["user"],
                 bs=-1,
-                params=None)
+                params=params)
             loss_eq += loss_id
 
             # data loss
@@ -632,7 +629,7 @@ class PINNs(AlgorithmBase):
                 labels,
                 labels_attr["user"],
                 bs=-1,
-                params=None)  # TODO: bs is not used
+                params=params)  # TODO: bs is not used
             loss_data += loss_d
             outs.append(out_id)
 
