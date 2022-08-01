@@ -655,7 +655,10 @@ class PINNs(AlgorithmBase):
                                                 float) else loss_data
         loss_details.append(self.__sqrt(loss_data))
 
-        return loss, outs, loss_details
+        if config._compute_backend == "jax":
+            return loss
+        else:
+            return loss, outs, loss_details
 
     def __timespace(self, time, space):
 

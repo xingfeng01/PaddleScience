@@ -24,6 +24,7 @@ import time
 try:
     import jax
     from jax import jit
+    from jax import numpy as jnp
     from functools import partial
 except:
     pass
@@ -209,8 +210,12 @@ class CompFormula:
 
 
 def l2_norm_square(x, wgt=None):
-    # new ad
-    if config.prim_enabled():
+    if config._compute_backend == "jax":
+        if wgt is None:
+            return jnp.linalg.norm(x**2, ord=1)
+        else:
+            return jnp.linalg.norm(x**2 * wgt, ord=1)
+    elif config.prim_enabled():  # new ad
         if wgt is None:
             l2_norm = paddle.norm(x, p=2)
         elif np.isscalar(wgt):
