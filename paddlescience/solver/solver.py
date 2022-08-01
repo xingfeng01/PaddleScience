@@ -752,10 +752,10 @@ class Solver(object):
         @jit
         def update(epoch, optim_state, *inputs_labels):
 
-            param = self.optim_params(optim_state)
+            params = self.optim_params(optim_state)
 
             loss, grads = jax.value_and_grad(
-                self.algo.compute, argnums=0)(param,
+                self.algo.compute, argnums=0)(params,
                                               *inputs_labels,
                                               ninputs=self.ninputs,
                                               inputs_attr=self.inputs_attr,
@@ -792,9 +792,9 @@ class Solver(object):
         for i in range(len(inputs)):
             inputs[i] = jnp.array(inputs[i], dtype=self._dtype)
 
-        param = self.optim_params(self.optim_state)
+        params = self.optim_params(self.optim_state)
 
-        outs = self.algo.compute_forward(param, *inputs)
+        outs = self.algo.compute_forward(params, *inputs)
 
         return outs
 

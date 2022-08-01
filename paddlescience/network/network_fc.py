@@ -162,13 +162,13 @@ class FCNet(NetworkBase):
         return u
 
     # @partial(jit, static_argnums=(0,))
-    def __nn_func_jax(self, param, ins):
-        return self.predict_func(param, ins)
+    def __nn_func_jax(self, params, ins):
+        return self.predict_func(params, ins)
 
     # @partial(jit, static_argnums=(0,))
-    def nn_func(self, ins, param=None):
+    def nn_func(self, ins, params=None):
         if config._compute_backend == "jax":
-            return self.__nn_func_jax(param, ins)
+            return self.__nn_func_jax(params, ins)
         else:
             return self.__nn_func_paddle(ins)
 
