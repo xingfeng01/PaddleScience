@@ -67,7 +67,12 @@ class FCNet(NetworkBase):
         self._weights_attr = [None for i in range(num_layers)]
         self._bias_attr = [None for i in range(num_layers)]
 
-        act_str = {'sigmoid': F.sigmoid, 'tanh': paddle.tanh}
+        if config._compute_backend == "jax":
+            Tanh = jax.example_libraries.stax.Tanh
+            Sigmoid = jax.example_libraries.stax.Sigmoid
+            act_str = {'sigmoid': Sigmoid, 'tanh': Tanh}
+        else:
+            act_str = {'sigmoid': F.sigmoid, 'tanh': paddle.tanh}
 
         if isinstance(activation, str) and (activation in act_str):
             self.activation = act_str.get(activation)
@@ -100,12 +105,11 @@ class FCNet(NetworkBase):
     def make_network_jax(self, activation):
 
         Dense = jax.example_libraries.stax.Dense
-        Tanh = jax.example_libraries.stax.Tanh
 
         netlist = list()
         for i in range(self.num_layers - 1):
             netlist.append(Dense(self.hidden_size))
-            netlist.append(Tanh)
+            netlist.append(self.activation)
         netlist.append(Dense(self.num_outs))
 
         # i = self.num_layers - 1
