@@ -67,12 +67,7 @@ class FCNet(NetworkBase):
         self._weights_attr = [None for i in range(num_layers)]
         self._bias_attr = [None for i in range(num_layers)]
 
-        if config._compute_backend == "jax":
-            Tanh = jax.example_libraries.stax.Tanh
-            Sigmoid = jax.example_libraries.stax.Sigmoid
-            act_str = {'sigmoid': Sigmoid, 'tanh': Tanh}
-        else:
-            act_str = {'sigmoid': F.sigmoid, 'tanh': paddle.tanh}
+        act_str = {'sigmoid': F.sigmoid, 'tanh': paddle.tanh}
 
         if isinstance(activation, str) and (activation in act_str):
             self.activation = act_str.get(activation)
@@ -86,7 +81,7 @@ class FCNet(NetworkBase):
         # dynamic mode: make network here
         # static  mode: make network in solver
         if config._compute_backend == "jax":
-            self.make_network_jax()
+            self.make_network_jax(activation)
         else:
             if paddle.in_dynamic_mode():
                 self.make_network()
@@ -102,14 +97,15 @@ class FCNet(NetworkBase):
         else:
             return None
 
-    def make_network_jax(self):
+    def make_network_jax(self, activation):
 
         Dense = jax.example_libraries.stax.Dense
+        Tanh = jax.example_libraries.stax.Tanh
 
         netlist = list()
         for i in range(self.num_layers - 1):
             netlist.append(Dense(self.hidden_size))
-            netlist.append(self.activation)
+            netlist.append(Tanh)
         netlist.append(Dense(self.num_outs))
 
         # i = self.num_layers - 1
