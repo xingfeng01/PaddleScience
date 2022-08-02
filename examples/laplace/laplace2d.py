@@ -18,7 +18,9 @@ import paddle
 
 import time
 
-psci.config.set_compute_backend("jax")
+import jax, jax.numpy as jnp
+
+# psci.config.set_compute_backend("jax")
 
 paddle.seed(1)
 np.random.seed(1)
@@ -49,9 +51,50 @@ pde.add_bc("around", bc_around)
 pde_disc = pde.discretize(geo_disc=geo_disc)
 
 # Network
-# TODO: remove num_ins and num_outs
+nins = 2
+nouts = 1
+nlayers = 5
+nhidden = 20
+
 net = psci.network.FCNet(
-    num_ins=2, num_outs=1, num_layers=5, hidden_size=20, activation='tanh')
+    num_ins=nins,
+    num_outs=nouts,
+    num_layers=nlayers,
+    hidden_size=nhidden,
+    activation='tanh')
+
+for i in range(nlayers):
+
+    if i == 0:
+        shape = (nins, nhidden)
+    elif i == (nlayers - 1):
+        shape = (nhidden, nouts)
+    else:
+        shape = (nhidden, nhidden)
+
+    if psci.config._compute_backend == "jax":
+
+        def _fw_init(key, shape):
+            w_array = np.ones(shape, dtype='float32')
+            return jnp.array(w_array)
+
+        def _fb_init(key, shape):
+            b_array = np.zeros(shape, dtype='float32')
+            return jnp.array(b_array)
+
+        w_init = _fw_init
+        b_init = _fb_init
+    else:
+        w_array = np.ones(shape, dtype='float32')
+        b_array = np.zeros(shape, dtype='float32')
+        w_init = paddle.nn.initializer.Assign(w_array)
+        b_init = paddle.nn.initializer.Assign(b_array)
+
+    net.initialize(n=[i], weight_init=w_init, bias_init=b_init)
+
+# print(net._weights[0])
+# print(net._biases)
+# exit()
 
 # Loss
 loss = psci.loss.L2()
@@ -64,7 +107,7 @@ opt = psci.optimizer.Adam(learning_rate=0.001, parameters=net.parameters())
 
 # Solver
 solver = psci.solver.Solver(pde=pde_disc, algo=algo, opt=opt)
-solution = solver.solve(num_epoch=25, checkpoint_freq=20)
+solution = solver.solve(num_epoch=5, checkpoint_freq=20)
 
 psci.visu.save_vtk(geo_disc=pde_disc.geometry, data=solution)
 
