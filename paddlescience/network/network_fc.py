@@ -205,10 +205,10 @@ class FCNet(NetworkBase):
             >>> net.initialize(n=[1,2], weight_init=wcst, bias_init=bcst) 
         """
 
-        if config._compute_backend == "jax":
-            self.initialize_jax(path, n, weight_init, bias_init,
-                                learaning_rate)
-            return
+        # if config._compute_backend == "jax":
+        #     self.initialize_jax(path, n, weight_init, bias_init,
+        #                         learaning_rate)
+        #     return
 
         if type(path) is str:
             self.params_path = path

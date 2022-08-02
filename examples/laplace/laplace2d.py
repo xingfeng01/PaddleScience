@@ -20,7 +20,7 @@ import time
 
 import jax, jax.numpy as jnp
 
-# psci.config.set_compute_backend("jax")
+psci.config.set_compute_backend("jax")
 
 paddle.seed(1)
 np.random.seed(1)
@@ -53,8 +53,8 @@ pde_disc = pde.discretize(geo_disc=geo_disc)
 # Network
 nins = 2
 nouts = 1
-nlayers = 5
-nhidden = 20
+nlayers = 2
+nhidden = 5
 
 net = psci.network.FCNet(
     num_ins=nins,
@@ -63,38 +63,35 @@ net = psci.network.FCNet(
     hidden_size=nhidden,
     activation='tanh')
 
+w_array = []
+b_array = []
 for i in range(nlayers):
-
     if i == 0:
         shape = (nins, nhidden)
     elif i == (nlayers - 1):
         shape = (nhidden, nouts)
     else:
         shape = (nhidden, nhidden)
+    w_array.append(np.random.normal(size=shape))
+    b_array.append(np.random.normal(size=shape[-1]))
+
+for i in range(nlayers):
 
     if psci.config._compute_backend == "jax":
 
-        def _fw_init(key, shape):
-            w_array = np.ones(shape, dtype='float32')
-            return jnp.array(w_array)
+        weight = []
+        for i in range(nlayers):
+            w = jnp.array(w_array[i], dtype="float32")
+            b = jnp.array(b_array[i], dtype="float32")
+            weight.append((w, b))
+            if i < (nlayers - 1):
+                weight.append(())
+        net._weights = weight
 
-        def _fb_init(key, shape):
-            b_array = np.zeros(shape, dtype='float32')
-            return jnp.array(b_array)
-
-        w_init = _fw_init
-        b_init = _fb_init
     else:
-        w_array = np.ones(shape, dtype='float32')
-        b_array = np.zeros(shape, dtype='float32')
-        w_init = paddle.nn.initializer.Assign(w_array)
-        b_init = paddle.nn.initializer.Assign(b_array)
-
-    net.initialize(n=[i], weight_init=w_init, bias_init=b_init)
-
-# print(net._weights[0])
-# print(net._biases)
-# exit()
+        w_init = paddle.nn.initializer.Assign(w_array[i])
+        b_init = paddle.nn.initializer.Assign(b_array[i])
+        net.initialize(n=[i], weight_init=w_init, bias_init=b_init)
 
 # Loss
 loss = psci.loss.L2()
@@ -108,6 +105,8 @@ opt = psci.optimizer.Adam(learning_rate=0.001, parameters=net.parameters())
 # Solver
 solver = psci.solver.Solver(pde=pde_disc, algo=algo, opt=opt)
 solution = solver.solve(num_epoch=5, checkpoint_freq=20)
+
+exit()
 
 psci.visu.save_vtk(geo_disc=pde_disc.geometry, data=solution)
 
