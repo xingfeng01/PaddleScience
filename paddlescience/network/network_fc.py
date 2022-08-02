@@ -62,8 +62,8 @@ class FCNet(NetworkBase):
         self.num_layers = num_layers
         self.hidden_size = hidden_size
 
-        self._weights = []
-        self._biases = []
+        self._weights = [None for i in range(num_layers)]
+        self._biases = [None for i in range(num_layers)]
         self._weights_attr = [None for i in range(num_layers)]
         self._bias_attr = [None for i in range(num_layers)]
 
@@ -144,8 +144,8 @@ class FCNet(NetworkBase):
                 shape=[rsize], dtype=self._dtype, is_bias=True, attr=b_attr)
 
             # add parameter
-            self.add_parameter("w_" + str(i), w)
-            self.add_parameter("b_" + str(i), b)
+            self.add_parameter("w_" + str(i), self._weights[i])
+            self.add_parameter("b_" + str(i), self._biases[i])
 
     def __nn_func_paddle(self, ins):
         u = ins

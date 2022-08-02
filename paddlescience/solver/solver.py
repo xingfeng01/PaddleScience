@@ -769,19 +769,20 @@ class Solver(object):
 
             return loss, optim_state
 
-        loss, optim_state = update(0, self.optim_state, *inputs_labels)
+        loss, self.optim_state = update(0, self.optim_state, *inputs_labels)
         print("jax epoch: ", 0, " Loss: ", loss)
 
         loss.block_until_ready()
         t1 = time.time()
 
         for epoch in range(num_epoch - 1):
-            loss, optim_state = update(epoch + 1, optim_state, *inputs_labels)
+            loss, self.optim_state = update(epoch + 1, self.optim_state,
+                                            *inputs_labels)
             print("jax epoch: ", epoch + 1, " Loss: ", loss)
 
         loss.block_until_ready()
         t2 = time.time()
-        print("time : ", t2 - t1)
+        # print("time : ", t2 - t1)
 
         return loss
 
