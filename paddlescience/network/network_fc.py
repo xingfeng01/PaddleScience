@@ -267,37 +267,37 @@ class FCNet(NetworkBase):
                             is_bias=True,
                             attr=b_attr)
 
-    def initialize_jax(self,
-                       path=None,
-                       n=None,
-                       weight_init=None,
-                       bias_init=None,
-                       learaning_rate=1.0):
+    # def initialize_jax(self,
+    #                    path=None,
+    #                    n=None,
+    #                    weight_init=None,
+    #                    bias_init=None,
+    #                    learaning_rate=1.0):
 
-        if isinstance(n, int):
-            n = list(n)
+    #     if isinstance(n, int):
+    #         n = list(n)
 
-        Dense = jax.example_libraries.stax.Dense
+    #     Dense = jax.example_libraries.stax.Dense
 
-        for i in n:
-            if (weight_init is not None) and (bias_init is not None):
-                self.__netlist[2 * i] = Dense(
-                    self.hidden_size, W_init=weight_init, b_init=bias_init)
-            elif weight_init is not None:
-                self.__netlist[2 * i] = Dense(
-                    self.hidden_size, W_init=weight_init)
-            elif bias_init is not None:
-                self.__netlist[2 * i] = Dense(
-                    self.hidden_size, b_init=bias_init)
-            else:
-                self.__netlist[2 * i] = Dense(self.hidden_size)
+    #     for i in n:
+    #         if (weight_init is not None) and (bias_init is not None):
+    #             self.__netlist[2 * i] = Dense(
+    #                 self.hidden_size, W_init=weight_init, b_init=bias_init)
+    #         elif weight_init is not None:
+    #             self.__netlist[2 * i] = Dense(
+    #                 self.hidden_size, W_init=weight_init)
+    #         elif bias_init is not None:
+    #             self.__netlist[2 * i] = Dense(
+    #                 self.hidden_size, b_init=bias_init)
+    #         else:
+    #             self.__netlist[2 * i] = Dense(self.hidden_size)
 
-        init_func, self.predict_func = jax.example_libraries.stax.serial(
-            *self.__netlist)
+    #     init_func, self.predict_func = jax.example_libraries.stax.serial(
+    #         *self.__netlist)
 
-        rng_key = jax.random.PRNGKey(1)
-        input_shape = (None, self.num_ins)
-        _, self._weights = init_func(rng_key, input_shape)
+    #     rng_key = jax.random.PRNGKey(1)
+    #     input_shape = (None, self.num_ins)
+    #     _, self._weights = init_func(rng_key, input_shape)
 
     def flatten_params(self):
         flat_vars = list(map(paddle.flatten, self._weights + self._biases))

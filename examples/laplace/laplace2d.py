@@ -20,7 +20,7 @@ import time
 
 import jax, jax.numpy as jnp
 
-psci.config.set_compute_backend("jax")
+# psci.config.set_compute_backend("jax")
 
 paddle.seed(1)
 np.random.seed(1)
@@ -53,8 +53,8 @@ pde_disc = pde.discretize(geo_disc=geo_disc)
 # Network
 nins = 2
 nouts = 1
-nlayers = 2
-nhidden = 5
+nlayers = 5
+nhidden = 20
 
 net = psci.network.FCNet(
     num_ins=nins,
@@ -62,6 +62,8 @@ net = psci.network.FCNet(
     num_layers=nlayers,
     hidden_size=nhidden,
     activation='tanh')
+
+#################
 
 w_array = []
 b_array = []
@@ -72,8 +74,10 @@ for i in range(nlayers):
         shape = (nhidden, nouts)
     else:
         shape = (nhidden, nhidden)
-    w_array.append(np.random.normal(size=shape))
-    b_array.append(np.random.normal(size=shape[-1]))
+    w = np.random.normal(size=shape).astype('float32')
+    b = np.random.normal(size=shape[-1]).astype('float32')
+    w_array.append(w)
+    b_array.append(b)
 
 for i in range(nlayers):
 
@@ -92,6 +96,8 @@ for i in range(nlayers):
         w_init = paddle.nn.initializer.Assign(w_array[i])
         b_init = paddle.nn.initializer.Assign(b_array[i])
         net.initialize(n=[i], weight_init=w_init, bias_init=b_init)
+
+#################
 
 # Loss
 loss = psci.loss.L2()
