@@ -106,22 +106,14 @@ class FCNet(NetworkBase):
 
         Dense = jax.example_libraries.stax.Dense
 
-        netlist = list()
+        self.__netlist = list()
         for i in range(self.num_layers - 1):
-            netlist.append(Dense(self.hidden_size))
-            netlist.append(self.activation)
-        netlist.append(Dense(self.num_outs))
-
-        # i = self.num_layers - 1
-        # netlist = list()
-        # for i in range(self.num_layers - 1):
-        #     netlist.append(Dense(self.hidden_size, W_init=jax.nn.initializers.constant(2.0*i+1), b_init=jax.nn.initializers.constant(2.0*i+2)))
-        #     netlist.append(Tanh)  # TODO: optimizer sigmoid
-        # i = self.num_layers - 1
-        # netlist.append(Dense(self.num_outs, W_init=jax.nn.initializers.constant(2.0*i+1), b_init=jax.nn.initializers.constant(2.0*i+2)))
+            self.__netlist.append(Dense(self.hidden_size))
+            self.__netlist.append(self.activation)
+        self.__netlist.append(Dense(self.num_outs))
 
         init_func, self.predict_func = jax.example_libraries.stax.serial(
-            *netlist)
+            *self.__netlist)
 
         rng_key = jax.random.PRNGKey(1)
         input_shape = (None, self.num_ins)
@@ -287,29 +279,21 @@ class FCNet(NetworkBase):
 
         Dense = jax.example_libraries.stax.Dense
 
-        netlist = list()
-        for i in range(self.num_layers):
-            if i in n:
-                if (weight_init is not None) and (bias_init is not None):
-                    netlist.append(
-                        Dense(
-                            self.hidden_size,
-                            W_init=weight_init,
-                            b_init=bias_init))
-                elif weight_init is not None:
-                    netlist.append(Dense(self.hidden_size, W_init=weight_init))
-                elif bias_init is not None:
-                    netlist.append(Dense(self.hidden_size, b_init=bias_init))
-                else:
-                    netlist.append(Dense(self.hidden_size))
+        for i in n:
+            if (weight_init is not None) and (bias_init is not None):
+                self.__netlist[2 * i] = Dense(
+                    self.hidden_size, W_init=weight_init, b_init=bias_init)
+            elif weight_init is not None:
+                self.__netlist[2 * i] = Dense(
+                    self.hidden_size, W_init=weight_init)
+            elif bias_init is not None:
+                self.__netlist[2 * i] = Dense(
+                    self.hidden_size, b_init=bias_init)
             else:
-                netlist.append(Dense(self.hidden_size))
-
-            if i < (self.num_layers - 1):
-                netlist.append(self.activation)
+                self.__netlist[2 * i] = Dense(self.hidden_size)
 
         init_func, self.predict_func = jax.example_libraries.stax.serial(
-            *netlist)
+            *self.__netlist)
 
         rng_key = jax.random.PRNGKey(1)
         input_shape = (None, self.num_ins)
