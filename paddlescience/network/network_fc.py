@@ -135,17 +135,15 @@ class FCNet(NetworkBase):
             b_attr = self._bias_attr[i]
 
             # create parameter with attr
-            w = self.create_parameter(
+            self._weights[i] = self.create_parameter(
                 shape=[lsize, rsize],
                 dtype=self._dtype,
                 is_bias=False,
                 attr=w_attr)
-            b = self.create_parameter(
+            self._biases[i] = self.create_parameter(
                 shape=[rsize], dtype=self._dtype, is_bias=True, attr=b_attr)
 
             # add parameter
-            self._weights.append(w)
-            self._biases.append(b)
             self.add_parameter("w_" + str(i), w)
             self.add_parameter("b_" + str(i), b)
 
@@ -250,6 +248,7 @@ class FCNet(NetworkBase):
                             dtype=self._dtype,
                             is_bias=False,
                             attr=w_attr)
+                        self.add_parameter("w_" + str(i), self._weights[i])
 
                 # update bias
                 if bias_init is not None:
@@ -266,6 +265,7 @@ class FCNet(NetworkBase):
                             dtype=self._dtype,
                             is_bias=True,
                             attr=b_attr)
+                        self.add_parameter("b_" + str(i), self._biases[i])
 
     # def initialize_jax(self,
     #                    path=None,
