@@ -725,7 +725,7 @@ class Solver(object):
         self.labels_attr = labels_attr
 
         [optim_init, self.optim_update, self.optim_params] = self.opt
-        self.optim_state = optim_init(self.algo.net.weights)
+        self.optim_state = optim_init(self.algo.net._weights)
 
     # solve with jax
     def __solve_jax(self, num_epoch, bs, checkpoint_freq):

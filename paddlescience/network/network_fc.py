@@ -125,7 +125,7 @@ class FCNet(NetworkBase):
 
         rng_key = jax.random.PRNGKey(1)
         input_shape = (None, self.num_ins)
-        _, self.weights = init_func(rng_key, input_shape)
+        _, self._weights = init_func(rng_key, input_shape)
 
     def make_network(self):
         for i in range(self.num_layers):
@@ -313,7 +313,7 @@ class FCNet(NetworkBase):
 
         rng_key = jax.random.PRNGKey(1)
         input_shape = (None, self.num_ins)
-        _, self.weights = init_func(rng_key, input_shape)
+        _, self._weights = init_func(rng_key, input_shape)
 
     def flatten_params(self):
         flat_vars = list(map(paddle.flatten, self._weights + self._biases))
