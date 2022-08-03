@@ -20,10 +20,49 @@ import time
 
 import jax, jax.numpy as jnp
 
+psci.config.enable_static()
+
 # psci.config.set_compute_backend("jax")
 
 paddle.seed(1)
 np.random.seed(1)
+cfg = psci.utils.parse_args()
+
+if cfg is not None:
+    # Geometry
+    npoints = cfg['Geometry']['npoints']
+    seed_num = cfg['Geometry']['seed']
+    sampler_method = cfg['Geometry']['sampler_method']
+    # Network
+    epochs = cfg['Global']['epochs']
+    num_layers = cfg['Model']['num_layers']
+    hidden_size = cfg['Model']['hidden_size']
+    activation = cfg['Model']['activation']
+    # Optimizer
+    learning_rate = cfg['Optimizer']['lr']['learning_rate']
+    # Post-processing
+    solution_filename = cfg['Post-processing']['solution_filename']
+    vtk_filename = cfg['Post-processing']['vtk_filename']
+    checkpoint_path = cfg['Post-processing']['checkpoint_path']
+else:
+    # Geometry
+    npoints = 10201
+    seed_num = 1
+    sampler_method = 'uniform'
+    # Network
+    epochs = 5
+    num_layers = 5
+    hidden_size = 20
+    activation = 'tanh'
+    # Optimizer
+    learning_rate = 0.001
+    # Post-processing
+    solution_filename = 'output_laplace2d'
+    vtk_filename = 'output_laplace2d'
+    checkpoint_path = 'checkpoints'
+
+paddle.seed(seed_num)
+np.random.seed(seed_num)
 
 # analytical solution 
 ref_sol = lambda x, y: np.cos(x) * np.cosh(y)
@@ -35,8 +74,7 @@ geo.add_boundary(
     criteria=lambda x, y: (y == 1.0) | (y == 0.0) | (x == 0.0) | (x == 1.0))
 
 # discretize geometry
-npoints = 10201
-geo_disc = geo.discretize(npoints=npoints, method="uniform")
+geo_disc = geo.discretize(npoints=npoints, method=sampler_method)
 
 # Laplace
 pde = psci.pde.Laplace(dim=2)
@@ -51,44 +89,39 @@ pde.add_bc("around", bc_around)
 pde_disc = pde.discretize(geo_disc=geo_disc)
 
 # Network
-nins = 2
-nouts = 1
-nlayers = 5
-nhidden = 20
-
 net = psci.network.FCNet(
-    num_ins=nins,
-    num_outs=nouts,
-    num_layers=nlayers,
-    hidden_size=nhidden,
-    activation='tanh')
+    num_ins=2,
+    num_outs=1,
+    num_layers=num_layers,
+    hidden_size=hidden_size,
+    activation=activation)
 
 #################
 
 w_array = []
 b_array = []
-for i in range(nlayers):
+for i in range(num_layers):
     if i == 0:
-        shape = (nins, nhidden)
-    elif i == (nlayers - 1):
-        shape = (nhidden, nouts)
+        shape = (2, hidden_size)
+    elif i == (num_layers - 1):
+        shape = (hidden_size, 1)
     else:
-        shape = (nhidden, nhidden)
+        shape = (hidden_size, hidden_size)
     w = np.random.normal(size=shape).astype('float32')
     b = np.random.normal(size=shape[-1]).astype('float32')
     w_array.append(w)
     b_array.append(b)
 
-for i in range(nlayers):
+for i in range(num_layers):
 
     if psci.config._compute_backend == "jax":
 
         weight = []
-        for i in range(nlayers):
+        for i in range(num_layers):
             w = jnp.array(w_array[i], dtype="float32")
             b = jnp.array(b_array[i], dtype="float32")
             weight.append((w, b))
-            if i < (nlayers - 1):
+            if i < (num_layers - 1):
                 weight.append(())
         net._weights = weight
 
@@ -97,8 +130,6 @@ for i in range(nlayers):
         b_init = paddle.nn.initializer.Assign(b_array[i])
         net.initialize(n=[i], weight_init=w_init, bias_init=b_init)
 
-#################
-
 # Loss
 loss = psci.loss.L2()
 
@@ -106,17 +137,18 @@ loss = psci.loss.L2()
 algo = psci.algorithm.PINNs(net=net, loss=loss)
 
 # Optimizer
-opt = psci.optimizer.Adam(learning_rate=0.001, parameters=net.parameters())
+opt = psci.optimizer.Adam(
+    learning_rate=learning_rate, parameters=net.parameters())
 
 # Solver
 solver = psci.solver.Solver(pde=pde_disc, algo=algo, opt=opt)
-solution = solver.solve(num_epoch=5, checkpoint_freq=20)
+solution = solver.solve(num_epoch=epochs)
 
-solution = solver.predict()
+psci.visu.save_vtk(
+    filename=vtk_filename, geo_disc=pde_disc.geometry, data=solution)
 
-# exit()
-
-psci.visu.save_vtk(geo_disc=pde_disc.geometry, data=solution)
+psci.visu.save_npy(
+    filename=solution_filename, geo_disc=pde_disc.geometry, data=solution)
 
 # MSE
 # TODO: solution array to dict: interior, bc

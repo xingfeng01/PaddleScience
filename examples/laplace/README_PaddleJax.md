@@ -13,44 +13,39 @@ psci.config.set_compute_backend("jax")
 ```
 
 # Network
-nins = 2
-nouts = 1
-nlayers = 5
-nhidden = 20
-
 net = psci.network.FCNet(
-    num_ins=nins,
-    num_outs=nouts,
-    num_layers=nlayers,
-    hidden_size=nhidden,
-    activation='tanh')
+    num_ins=2,
+    num_outs=1,
+    num_layers=num_layers,
+    hidden_size=hidden_size,
+    activation=activation)
 
 #################
 
 w_array = []
 b_array = []
-for i in range(nlayers):
+for i in range(num_layers):
     if i == 0:
-        shape = (nins, nhidden)
-    elif i == (nlayers - 1):
-        shape = (nhidden, nouts)
+        shape = (2, hidden_size)
+    elif i == (num_layers - 1):
+        shape = (hidden_size, 1)
     else:
-        shape = (nhidden, nhidden)
+        shape = (hidden_size, hidden_size)
     w = np.random.normal(size=shape).astype('float32')
     b = np.random.normal(size=shape[-1]).astype('float32')
     w_array.append(w)
     b_array.append(b)
 
-for i in range(nlayers):
+for i in range(num_layers):
 
     if psci.config._compute_backend == "jax":
 
         weight = []
-        for i in range(nlayers):
+        for i in range(num_layers):
             w = jnp.array(w_array[i], dtype="float32")
             b = jnp.array(b_array[i], dtype="float32")
             weight.append((w, b))
-            if i < (nlayers - 1):
+            if i < (num_layers - 1):
                 weight.append(())
         net._weights = weight
 
