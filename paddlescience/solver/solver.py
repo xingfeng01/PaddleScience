@@ -574,6 +574,8 @@ class Solver(object):
         feeds = dict()
         for i in range(len(self.inputs)):
             feeds['input' + str(i)] = self.inputs[i]
+        else:
+            assert 0, "Please specify the path and name of the static model."
 
         # fetch outputs
         fetches = list()
@@ -584,8 +586,6 @@ class Solver(object):
         if self.algo.net.params_path is not None:
             state_dict = paddle.load(self.algo.net.params_path)
             self.predict_program.set_state_dict(state_dict)
-        else:
-            assert 0, "Please specify the path and name of the static model."
 
         # run
         rslt = self.exe.run(self.predict_program,
@@ -770,21 +770,26 @@ class Solver(object):
             return loss, optim_state
 
         loss, self.optim_state = update(0, self.optim_state, *inputs_labels)
-        print("jax epoch: ", 0, " Loss: ", loss)
+        print("jax epoch: ", 1, " Loss: ", loss)
 
         loss.block_until_ready()
         t1 = time.time()
 
-        for epoch in range(num_epoch - 1):
+        for epoch in range(num_epoch - 2):
             loss, self.optim_state = update(epoch + 1, self.optim_state,
                                             *inputs_labels)
-            print("jax epoch: ", epoch + 1, " Loss: ", loss)
+            print("jax epoch: ", epoch + 2, " Loss: ", loss)
 
         loss.block_until_ready()
         t2 = time.time()
+
+        # compute outs
+        params = self.optim_params(self.optim_state)
+        outs = self.algo.compute_forward(params, *inputs)
+
         # print("time : ", t2 - t1)
 
-        return loss
+        return outs
 
     # predict with jax
     def __predict_jax(self):
