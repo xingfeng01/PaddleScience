@@ -773,6 +773,8 @@ class Solver(object):
 
         inputs_labels = inputs + labels  # tmp to one list
 
+        print("Jax is Currently in Use.")
+
         @jit
         def update(epoch, optim_state, *inputs_labels):
 
@@ -792,10 +794,11 @@ class Solver(object):
             return loss, optim_state
 
         loss, self.optim_state = update(0, self.optim_state, *inputs_labels)
-        print("jax epoch: ", 1, " Loss: ", loss)
+        print("Jax epoch: ", 1, " Loss: ", loss)
 
         loss.block_until_ready()
-        t1 = time.time()
+
+        timer = utils.Timer()
 
         for epoch in range(num_epoch - 2):
             loss, self.optim_state = update(epoch + 1, self.optim_state,
@@ -803,7 +806,9 @@ class Solver(object):
             print("jax epoch: ", epoch + 2, " Loss: ", loss)
 
         loss.block_until_ready()
-        t2 = time.time()
+
+        timer.end()
+        timer.print()
 
         # compute outs
         params = self.optim_params(self.optim_state)
