@@ -159,6 +159,10 @@ class CompFormula:
         jacobian = self.jacobian
         hessian = self.hessian
 
+        # translate sympy diff to f_idx and var_idx
+        # f_idx: dependent(function) index, this function is in which index of dependent variable list 
+        # var_idx: variable index, this variable is in which index of independent variable list
+
         # dependent variable
         f_idx = self.dvar.index(item.args[0])
 
@@ -186,25 +190,16 @@ class CompFormula:
         # parser hessian for order 2
         elif order == 2:
 
-            # t1 = time.time()
+            var_idx = list()
+            for it in item.args[1:]:
+                for i in range(it[1]):
+                    idx = self.indvar.index(it[0])
+                    var_idx.append(idx)
 
-            if (len(item.args[1:]) == 1):
-                var_idx = self.indvar.index(item.args[1][0])
-                if config._compute_backend == "jax":
-                    rst = hessian[f_idx][var_idx][var_idx][:]
-                else:
-                    rst = hessian[f_idx][:, var_idx, var_idx]
+            if config._compute_backend == "jax":
+                rst = hessian[f_idx][var_idx[0]][var_idx[1]][:]
             else:
-                var_idx1 = self.indvar.index(item.args[1][0])
-                var_idx2 = self.indvar.index(item.args[2][0])
-
-                if config._compute_backend == "jax":
-                    rst = hessian[f_idx][var_idx1][var_idx2][:]
-                else:
-                    rst = hessian[f_idx][:, var_idx1, var_idx2]
-
-            # t2 = time.time()
-            # print("2: ", t2-t1)
+                rst = hessian[f_idx][:, var_idx[0], var_idx[1]]
 
         return rst
 
