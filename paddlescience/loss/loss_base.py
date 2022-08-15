@@ -46,6 +46,8 @@ class CompFormula:
 
     def compute_outs_der(self, input, bs, params=None):
 
+        self.params = params
+
         # outs
         self.compute_outs(input, bs, params)
 
@@ -194,18 +196,64 @@ class CompFormula:
                     idx = self.indvar.index(it[0])
                     var_idx.append(idx)
             if config._compute_backend == "jax":
-                rst = hessian[f_idx][var_idx[0]][var_idx[1]][:]
+                # rst = hessian[f_idx][var_idx[0]][var_idx[1]][:]
+
+                # out = self.outs[:, f_idx]
+
+                index = [0 for _ in range(order)]
+                n = order
+                for it in item.args[1:]:
+                    for i in range(it[1]):
+                        n = n - 1
+                        index[n] = self.indvar.index(it[0])
+
+                def func0(x, params):
+                    return self.net.nn_func(x, params)[0]
+
+                def func_grad(x, params, idx, ord):
+                    if ord == 1:
+                        return jax.grad(
+                            func0, argnums=0)(x, params)[idx[ord - 1]]
+                    else:
+                        return jax.grad(
+                            func_grad, argnums=0)(x, params, idx,
+                                                  ord - 1)[idx[ord - 1]]
+
+                params = self.params
+
+                #print(input[:, 0])
+                #print(params)
+                func_grad(input[0, :], params, index, order)
+
+                #jax.grad(func0, argnums=0)(input[0,:], params)[0]
+
+                # func(params, input[:, 0], index, order)
+
+                # print(func_grad[1])
+                #print(func_grad[1](input[0,:], self.params)[0])
+                exit()
+
+                rst = out
+
             else:
                 rst = hessian[f_idx][:, var_idx[0], var_idx[1]]
 
         # order >= 3
         else:
-            out = self.outs[:, f_idx]
+
+            params = self.params
+
+            # out = self.outs[:, f_idx]
+            out = self.net.nn_func
+
             for it in item.args[1:]:
                 for i in range(it[1]):
                     idx = self.indvar.index(it[0])
-                    out = paddle.incubate.autograd.grad(out, input)[:, idx]
-            rst = out
+
+                    out = jax.grad(out, argnums=0)(input, params)[idx]
+
+                    # out = paddle.incubate.autograd.grad(out, input)[:, idx]
+            rst = out(input, params)
 
         return rst
 
