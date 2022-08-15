@@ -46,8 +46,6 @@ class CompFormula:
 
     def compute_outs_der(self, input, bs, params=None):
 
-        self.params = params
-
         # outs
         self.compute_outs(input, bs, params)
 
@@ -81,8 +79,14 @@ class CompFormula:
         self.jacobian = jacobian
         self.hessian = hessian
 
-    def compute_formula(self, formula, input, input_attr, labels, labels_attr,
-                        normal):
+    def compute_formula(self,
+                        formula,
+                        input,
+                        input_attr,
+                        labels,
+                        labels_attr,
+                        normal,
+                        params=None):
 
         rst = 0.0
 
@@ -92,23 +96,31 @@ class CompFormula:
             # parser each item
             for item in formula.args:
                 rst += self.__compute_formula_item(item, input, input_attr,
-                                                   labels, labels_attr, normal)
+                                                   labels, labels_attr, normal,
+                                                   params)
         else:
             num_item = 1
             rst += self.__compute_formula_item(formula, input, input_attr,
-                                               labels, labels_attr, normal)
+                                               labels, labels_attr, normal,
+                                               params)
 
         return rst
 
-    def __compute_formula_item(self, item, input, input_attr, labels,
-                               labels_attr, normal):
+    def __compute_formula_item(self,
+                               item,
+                               input,
+                               input_attr,
+                               labels,
+                               labels_attr,
+                               normal,
+                               params=None):
 
         rst = 1.0  # TODO: float / double / float16
 
         if item.is_Mul:
             for it in item.args:
                 rst = rst * self.__compute_formula_item(
-                    it, input, input_attr, labels, labels_attr, normal)
+                    it, input, input_attr, labels, labels_attr, normal, params)
         elif item.is_Number:
             # print("*** number:", item)
             rst = float(item) * rst  # TODO: float / double / float16
@@ -121,7 +133,7 @@ class CompFormula:
                 item, input, input_attr, labels, labels_attr)
         elif item.is_Derivative:
             # print("*** der:", item)
-            rst = rst * self.__compute_formula_der(item, input, normal)
+            rst = rst * self.__compute_formula_der(item, input, normal, params)
         else:
             pass
 
@@ -156,7 +168,7 @@ class CompFormula:
         #     f_idx = self.parameter_pde.index(item)
         #     return input[:, f_idx + input_attr.parameter_pde_start]  # TODO
 
-    def __compute_formula_der(self, item, input, normal):
+    def __compute_formula_der(self, item, input, normal, params=None):
 
         jacobian = self.jacobian
         hessian = self.hessian
@@ -196,10 +208,16 @@ class CompFormula:
                     idx = self.indvar.index(it[0])
                     var_idx.append(idx)
             if config._compute_backend == "jax":
-                # rst = hessian[f_idx][var_idx[0]][var_idx[1]][:]
+                rst = hessian[f_idx][var_idx[0]][var_idx[1]][:]
+            else:
+                rst = hessian[f_idx][:, var_idx[0], var_idx[1]]
 
-                # out = self.outs[:, f_idx]
+        # order >= 3
+        else:
 
+            if config._compute_backend == "jax":
+
+                # index
                 index = [0 for _ in range(order)]
                 n = order
                 for it in item.args[1:]:
@@ -207,53 +225,29 @@ class CompFormula:
                         n = n - 1
                         index[n] = self.indvar.index(it[0])
 
-                def func0(x, params):
+                # func for order 1
+                def func1(params, x):
                     return self.net.nn_func(x, params)[0]
 
-                def func_grad(x, params, idx, ord):
+                # func for order >=2, recursive   
+                def func(params, x, idx, ord):
                     if ord == 1:
                         return jax.grad(
-                            func0, argnums=0)(x, params)[idx[ord - 1]]
+                            func1, argnums=1)(params, x)[idx[ord - 1]]
                     else:
                         return jax.grad(
-                            func_grad, argnums=0)(x, params, idx,
-                                                  ord - 1)[idx[ord - 1]]
+                            func, argnums=1)(params, x, idx,
+                                             ord - 1)[idx[ord - 1]]
 
-                params = self.params
-
-                #print(input[:, 0])
-                #print(params)
-                func_grad(input[0, :], params, index, order)
-
-                #jax.grad(func0, argnums=0)(input[0,:], params)[0]
-
-                # func(params, input[:, 0], index, order)
-
-                # print(func_grad[1])
-                #print(func_grad[1](input[0,:], self.params)[0])
-                exit()
-
-                rst = out
-
+                rst = jax.vmap(func, [None, 0, None, None], 0)(params, input,
+                                                               index, order)
             else:
-                rst = hessian[f_idx][:, var_idx[0], var_idx[1]]
-
-        # order >= 3
-        else:
-
-            params = self.params
-
-            # out = self.outs[:, f_idx]
-            out = self.net.nn_func
-
-            for it in item.args[1:]:
-                for i in range(it[1]):
-                    idx = self.indvar.index(it[0])
-
-                    out = jax.grad(out, argnums=0)(input, params)[idx]
-
-                    # out = paddle.incubate.autograd.grad(out, input)[:, idx]
-            rst = out(input, params)
+                out = self.outs[:, f_idx]
+                for it in item.args[1:]:
+                    for i in range(it[1]):
+                        idx = self.indvar.index(it[0])
+                        out = paddle.incubate.autograd.grad(out, input)[:, idx]
+                rst = out
 
         return rst
 
