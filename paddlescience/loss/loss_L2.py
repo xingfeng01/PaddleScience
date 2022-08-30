@@ -18,6 +18,8 @@ from .loss_base import CompFormula, l2_norm_square
 from ..labels import LabelInt
 from .. import config
 
+import jax
+
 
 class L2:
     """
@@ -218,12 +220,7 @@ class L2:
         for i in range(len(pde.dvar)):
             idx = labels_attr["data_next"][i]
             data = labels[idx]
-            if config.prim_enabled():
-                nrm = paddle.norm(cmploss.outs[:, i] - data, p=2)
-                loss += nrm * nrm
-            else:
-                loss += paddle.norm(cmploss.outs[:, i] - data, p=2)**2
-
+            loss += l2_norm_square(cmploss.outs[:, i] - data)
             # TODO: p=2 p=1
 
         loss = self.data_weight * loss
