@@ -395,6 +395,8 @@ class Solver(object):
             self.train_program = paddle.static.Program()
             self.startup_program = paddle.static.Program()
 
+            tstart = time.time()
+
             # construct train program
             with paddle.static.program_guard(self.train_program,
                                              self.startup_program):
@@ -440,8 +442,16 @@ class Solver(object):
                 if config.prim_enabled() and not config.cinn_enabled():
                     config.prim2orig()
 
+            tend = time.time()
+            print("Time construct program: ", tend - tstart)
+
+            tstart = time.time()
+
             # startup program
             self.exe.run(self.startup_program)
+
+            tend = time.time()
+            print("Time run startup: ", tend - tstart)
 
     # solve static
     def __solve_static(self, num_epoch, bs, checkpoint_freq, checkpoint_path):
@@ -496,6 +506,17 @@ class Solver(object):
 
         # record time
         timer = utils.Timer()
+
+
+        tstart = time.time()
+
+        rslt = self.exe.run(compiled_program,
+                            feed=feeds,
+                            fetch_list=fetches)
+
+        tend = time.time()
+        print("Time run main program 1st time: ", tend - tstart)
+
 
         for epoch in range(num_epoch):
             rslt = self.exe.run(compiled_program,
