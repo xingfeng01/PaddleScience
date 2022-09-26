@@ -72,11 +72,15 @@ class L2:
         # print(input)
         # print(cmploss.outs[0:4,:])
 
+        # print(cmploss.outs)
+
         loss = 0.0
         for i in range(len(pde.equations)):
             formula = pde.equations[i]
             rst = cmploss.compute_formula(formula, input, input_attr, labels,
                                           labels_attr, None, params)
+
+            # print(rst)
 
             # TODO: simplify
             rhs_eq = labels_attr["equations"][i]["rhs"]

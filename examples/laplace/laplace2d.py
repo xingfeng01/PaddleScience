@@ -20,7 +20,7 @@ import time
 
 import jax, jax.numpy as jnp
 
-psci.config.enable_static()
+# psci.config.enable_static()
 
 # psci.config.set_compute_backend("jax")
 

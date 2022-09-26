@@ -42,7 +42,7 @@ else:
     seed_num = 1
     sampler_method = 'uniform'
     # Network
-    epochs = 10000
+    epochs = 1
     num_layers = 5
     hidden_size = 20
     activation = 'tanh'
@@ -82,7 +82,7 @@ pde = psci.pde.Poisson(dim=2, rhs=ref_rhs)
 bc_top = psci.bc.Dirichlet('u', rhs=ref_sol)
 bc_down = psci.bc.Dirichlet('u', rhs=ref_sol)
 bc_left = psci.bc.Dirichlet('u', rhs=ref_sol)
-bc_right = psci.bc.Dirichlet('u', rhs=ref_sol)
+bc_right = psci.bc.Neumann('u', rhs=ref_sol)
 
 # add bounday and boundary condition
 pde.add_bc("top", bc_top)

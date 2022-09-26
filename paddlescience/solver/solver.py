@@ -178,6 +178,31 @@ class Solver(object):
 
         # create inputs/labels and its attributes
         inputs, inputs_attr = self.algo.create_inputs(self.pde)
+
+        # inputs[0][0] = -1.0
+        # inputs[0][1] =  1.0
+        # inputs[0][2] = -1.0
+        # inputs[0][3] =  1.0
+        # inputs[0][4] =  0.0
+
+        # inputs[0][5] = -0.5
+        # inputs[0][6] =  0.5
+        # inputs[0][7] = -0.75
+        # inputs[0][8] =  0.25
+        # inputs[0][9] = -0.25
+
+        # inputs[0][10] =  0.75
+        # inputs[0][11] = -0.875
+        # inputs[0][12] = 0.125
+        # inputs[0][13] = -0.375
+        # inputs[0][14] = 0.625
+
+        # inputs[0][15] = -0.625
+        # inputs[0][16] = 0.375
+        # inputs[0][17] = -0.125
+        # inputs[0][18] = 0.875
+        # inputs[0][19] = -0.9375
+
         self.inputs = inputs
         self.inputs_attr = inputs_attr
 
